@@ -1,20 +1,19 @@
 import UIKit
+import CoreData
 
 class TodoViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     
-    var items = [Item]()
+    private var items = [Item]()
+    
+    private let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.delegate = self
         tableView.dataSource = self
-        // Do any additional setup after loading the view.
         
-        // TODO: Just for testing
-        for i in 1...50 {
-            items.append(Item("Item \(i)"))
-        }
+        print("FileManger directory: \(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))")
     }
     
     @IBAction func addButtonPressed(_ sender: Any) {
@@ -29,7 +28,13 @@ class TodoViewController: UIViewController {
         
         let addAction = UIAlertAction(title: "Add", style: .default) { action in
             guard let text = addTextField.text, !text.isEmpty else { return }
-            self.items.append(Item(text))
+            let item = Item(context: self.context)
+            
+            item.title = text
+            item.isChecked = false
+            
+            self.items.append(item)
+            self.saveItem()
             
             // Note: Load only the new item, don't reload the whole table
             
@@ -62,7 +67,7 @@ extension TodoViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TodoCell", for: indexPath)
         
-        cell.textLabel?.text = items[indexPath.row].description
+        cell.textLabel?.text = items[indexPath.row].title
         cell.accessoryType = items[indexPath.row].isChecked ? .checkmark : .none
         return cell
     }
@@ -73,8 +78,20 @@ extension TodoViewController: UITableViewDataSource, UITableViewDelegate {
         
         items[indexPath.row].isChecked = !items[indexPath.row].isChecked
         
+        saveItem()
         // Reload only one row
         tableView.reloadRows(at: [indexPath], with: .automatic)
     }
 }
 
+// MARK: CoreData helper methods
+
+extension TodoViewController {
+    func saveItem() {
+        do {
+            try self.context.save()
+        } catch {
+            print("Error in saving item: \(error)")
+        }
+    }
+}
