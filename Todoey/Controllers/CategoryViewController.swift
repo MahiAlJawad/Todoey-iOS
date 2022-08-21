@@ -8,6 +8,7 @@
 
 import CoreData
 import Foundation
+import SwipeCellKit
 import UIKit
 
 class CategoryViewController: UITableViewController {
@@ -63,23 +64,6 @@ class CategoryViewController: UITableViewController {
         
         present(alert, animated: true)
     }
-}
-
-// MARK: TableView Methods
-extension CategoryViewController {
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categories.count
-    }
-    
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "categoryCell", for: indexPath)
-        cell.textLabel?.text = categories[indexPath.row].name
-        return cell
-    }
-    
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        performSegue(withIdentifier: "gotoItem", sender: self)
-    }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         guard
@@ -95,9 +79,70 @@ extension CategoryViewController {
     }
 }
 
+// MARK: TableView Methods
+extension CategoryViewController {
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return categories.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "categoryCell", for: indexPath) as! SwipeTableViewCell
+        cell.delegate = self
+        cell.textLabel?.text = categories[indexPath.row].name
+        return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        performSegue(withIdentifier: "gotoItem", sender: self)
+    }
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 60.0
+    }
+}
+
+extension CategoryViewController: SwipeTableViewCellDelegate {
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
+        guard orientation == .right else { return nil }
+        
+        let deleteAction = SwipeAction(style: .destructive, title: nil) { action, indexPath in
+            print("Delete action triggered")
+            self.deleteAllItems(with: self.categories[indexPath.row].name ?? "")
+            
+            self.context.delete(self.categories[indexPath.row])
+            self.categories.remove(at: indexPath.row)
+            self.saveItem()
+        }
+        
+        // customize the action appearance
+        deleteAction.image = UIImage(named: "deleteIcon")
+        
+        return [deleteAction]
+    }
+    
+    func tableView(_ tableView: UITableView, editActionsOptionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> SwipeOptions {
+        var options = SwipeOptions()
+        options.expansionStyle = .destructive
+        return options
+    }
+}
+
 // MARK: CoreData helper methods
 
 extension CategoryViewController {
+    func deleteAllItems(with categoryName: String) {
+        let fetchRequest = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "parentCategory.name matches %@", categoryName)
+        guard let itemsToDelete = try? context.fetch(fetchRequest) else {
+            print("Failed Deleting items of category: \(categoryName)")
+            return
+        }
+        
+        itemsToDelete.map { self.context.delete($0) }
+        
+        saveItem()
+    }
+    
     func saveItem() {
         do {
             try self.context.save()

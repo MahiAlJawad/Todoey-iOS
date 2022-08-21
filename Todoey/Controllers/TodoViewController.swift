@@ -23,8 +23,8 @@ class TodoViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         searchBar.delegate = self
-                // Do any additional setup after loading the view.
-        print("FileManager directory: \(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))")
+        
+        //print("FileManager directory: \(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))")
     }
     
     @IBAction func addButtonPressed(_ sender: Any) {
@@ -121,7 +121,7 @@ extension TodoViewController {
         predicate: NSPredicate? = nil
     ) {
         let categoryPredicate = NSPredicate(format: "parentCategory.name matches %@", selectedCatagory?.name ?? "")
-        
+
         if let predicate = predicate {
             let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, predicate])
             request.predicate = compoundPredicate
