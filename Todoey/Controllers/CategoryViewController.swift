@@ -78,7 +78,20 @@ extension CategoryViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+        performSegue(withIdentifier: "gotoItem", sender: self)
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        guard
+            segue.identifier == "gotoItem",
+            let destinationVC = segue.destination as? TodoViewController,
+            let selectedRow = tableView.indexPathForSelectedRow?.row
+        else {
+            print("Could not set up required category")
+            return
+        }
+        print("Setting category as: \(categories[selectedRow])")
+        destinationVC.selectedCatagory = categories[selectedRow]
     }
 }
 

@@ -9,6 +9,13 @@ class TodoViewController: UIViewController {
     // items are part of database object i.e. NSManagedObject
     private var items = [Item]()
     
+    var selectedCatagory: Category? {
+        didSet {
+            // MARK: Read in CoreData database
+            loadItems()
+        }
+    }
+    
     private let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     override func viewDidLoad() {
@@ -16,9 +23,6 @@ class TodoViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         searchBar.delegate = self
-        // MARK: READ in CoreData Database
-        loadItems()
-        
                 // Do any additional setup after loading the view.
         print("FileManager directory: \(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))")
     }
@@ -42,6 +46,7 @@ class TodoViewController: UIViewController {
             
             item.title = text
             item.isChecked = false
+            item.parentCategory = self.selectedCatagory
             
             self.items.append(item)
             self.saveItem()
@@ -111,7 +116,19 @@ extension TodoViewController {
         }
     }
     
-    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
+    func loadItems(
+        with request: NSFetchRequest<Item> = Item.fetchRequest(),
+        predicate: NSPredicate? = nil
+    ) {
+        let categoryPredicate = NSPredicate(format: "parentCategory.name matches %@", selectedCatagory?.name ?? "")
+        
+        if let predicate = predicate {
+            let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, predicate])
+            request.predicate = compoundPredicate
+        } else {
+            request.predicate = categoryPredicate
+        }
+        
         do {
             items = try context.fetch(request)
         } catch {
@@ -124,7 +141,6 @@ extension TodoViewController {
 
 extension TodoViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        print("\(searchText) bar: \(searchBar.text)")
         guard let searchText = searchBar.text, !searchText.isEmpty else {
             loadItems()
             tableView.reloadData()
@@ -137,11 +153,12 @@ extension TodoViewController: UISearchBarDelegate {
         
         let request = Item.fetchRequest()
         
-        request.predicate = NSPredicate(format: "title contains[cd] %@", searchText)
+        let searchPredicate = NSPredicate(format: "title contains[cd] %@", searchText)
         
         request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
         
-        loadItems(with: request)
+        loadItems(with: request, predicate: searchPredicate)
+        
         tableView.reloadData()
     }
 }
