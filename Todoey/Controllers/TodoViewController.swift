@@ -1,5 +1,6 @@
 import UIKit
 import CoreData
+import SwipeCellKit
 
 class TodoViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
@@ -80,10 +81,12 @@ extension TodoViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "TodoCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "TodoCell", for: indexPath) as! SwipeTableViewCell
         
+        cell.delegate = self
         cell.textLabel?.text = items[indexPath.row].title
         cell.accessoryType = items[indexPath.row].isChecked ? .checkmark : .none
+        
         return cell
     }
     
@@ -102,6 +105,36 @@ extension TodoViewController: UITableViewDataSource, UITableViewDelegate {
 //        items.remove(at: indexPath.row)
 //        saveItem()
 //        tableView.reloadData()
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 60.0
+    }
+}
+
+// MARK: SwipeCell delegate methods
+
+extension TodoViewController: SwipeTableViewCellDelegate {
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
+        guard orientation == .right else { return nil }
+        
+        let deleteAction = SwipeAction(style: .destructive, title: nil) { action, indexPath in
+            print("Delete action triggered")
+            self.context.delete(self.items[indexPath.row])
+            self.items.remove(at: indexPath.row)
+            self.saveItem()
+        }
+        
+        // customize the action appearance
+        deleteAction.image = UIImage(named: "deleteIcon")
+        
+        return [deleteAction]
+    }
+    
+    func tableView(_ tableView: UITableView, editActionsOptionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> SwipeOptions {
+        var options = SwipeOptions()
+        options.expansionStyle = .destructive
+        return options
     }
 }
 
