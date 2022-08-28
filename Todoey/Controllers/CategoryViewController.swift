@@ -19,9 +19,18 @@ class CategoryViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupNavbarForLargeTitle()
         loadItems()
     }
     
+    func setupNavbarForLargeTitle() {
+        let appearance = UINavigationBarAppearance(idiom: .phone)
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.backgroundColor = .purple
+        navigationItem.standardAppearance = appearance
+        navigationItem.scrollEdgeAppearance = appearance
+    }
     
     @IBAction func AddCategoryPressed(_ sender: UIBarButtonItem) {
         let alert = UIAlertController(title: "Add new Category", message: nil, preferredStyle: .alert)

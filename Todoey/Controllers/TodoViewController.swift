@@ -24,8 +24,18 @@ class TodoViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         searchBar.delegate = self
-        
+        setupNavbarForLargeTitle()
+        navigationItem.title = selectedCatagory?.name
         //print("FileManager directory: \(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))")
+    }
+    
+    func setupNavbarForLargeTitle() {
+        let appearance = UINavigationBarAppearance(idiom: .phone)
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.backgroundColor = .purple
+        navigationItem.standardAppearance = appearance
+        navigationItem.scrollEdgeAppearance = appearance
     }
     
     @IBAction func addButtonPressed(_ sender: Any) {
@@ -70,6 +80,10 @@ class TodoViewController: UIViewController {
         alert.addAction(addAction)
         
         present(alert, animated: true)
+    }
+    
+    @IBAction func backButtonPressed(_ sender: Any) {
+        navigationController?.popViewController(animated: true)
     }
 }
 
