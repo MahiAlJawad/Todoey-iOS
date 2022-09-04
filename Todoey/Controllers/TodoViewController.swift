@@ -26,6 +26,7 @@ class TodoViewController: UIViewController {
         searchBar.delegate = self
         setupNavbarForLargeTitle()
         navigationItem.title = selectedCatagory?.name
+        tableView.keyboardDismissMode = .onDrag
         //print("FileManager directory: \(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))")
     }
     
@@ -55,9 +56,7 @@ class TodoViewController: UIViewController {
             
             let item = Item(context: self.context)
             
-            item.title = text
-            item.isChecked = false
-            item.parentCategory = self.selectedCatagory
+            item.setItem(title: text, category: self.selectedCatagory)
             
             self.items.append(item)
             self.saveItem()
@@ -78,6 +77,8 @@ class TodoViewController: UIViewController {
         }
         
         alert.addAction(addAction)
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        alert.addAction(cancelAction)
         
         present(alert, animated: true)
     }
@@ -129,27 +130,67 @@ extension TodoViewController: UITableViewDataSource, UITableViewDelegate {
 // MARK: SwipeCell delegate methods
 
 extension TodoViewController: SwipeTableViewCellDelegate {
+    func editAction(in indexPath: IndexPath) {
+        print("Edit action triggered")
+        
+        let editAlert = UIAlertController(title: "Edit task", message: nil, preferredStyle: .alert)
+        
+        var editTextField = UITextField()
+        
+        editAlert.addTextField { textField in
+            let currentTask = self.items[indexPath.row].title
+            textField.text = currentTask
+            editTextField = textField
+        }
+        
+        // MARK: Edit in CoreData Database
+        
+        let addAction = UIAlertAction(title: "Done", style: .default) { action in
+            guard let text = editTextField.text, !text.isEmpty else { return }
+            self.items[indexPath.row].title = text
+            self.saveItem()
+            self.tableView.reloadData()
+        }
+        
+        editAlert.addAction(addAction)
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        editAlert.addAction(cancelAction)
+        
+        present(editAlert, animated: true)
+        
+    }
+    
+    func deleteAction(in indexPath: IndexPath) {
+        print("Delete action triggered")
+        self.context.delete(self.items[indexPath.row])
+        self.items.remove(at: indexPath.row)
+        self.saveItem()
+        tableView.reloadData()
+    }
+    
     func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
         guard orientation == .right else { return nil }
         
-        let deleteAction = SwipeAction(style: .destructive, title: nil) { action, indexPath in
-            print("Delete action triggered")
-            self.context.delete(self.items[indexPath.row])
-            self.items.remove(at: indexPath.row)
-            self.saveItem()
+        let deleteAction = SwipeAction(style: .destructive, title: nil) { _, indexPath in
+            self.deleteAction(in: indexPath)
         }
         
         // customize the action appearance
         deleteAction.image = UIImage(named: "deleteIcon")
         
-        return [deleteAction]
+        let editAction = SwipeAction(style: .destructive, title: "Edit") { _, indexPath in
+            self.editAction(in: indexPath)
+        }
+        
+        return [editAction, deleteAction]
     }
     
-    func tableView(_ tableView: UITableView, editActionsOptionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> SwipeOptions {
-        var options = SwipeOptions()
-        options.expansionStyle = .destructive
-        return options
-    }
+//    func tableView(_ tableView: UITableView, editActionsOptionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> SwipeOptions {
+//        var options = SwipeOptions()
+//        options.expansionStyle = .destructive
+//        return options
+//    }
 }
 
 // MARK: CoreData helper methods
