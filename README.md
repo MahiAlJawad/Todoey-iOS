@@ -22,7 +22,7 @@ Additionally, I implemented Edit feature on the todo list with a better looking 
 
 # Demo Video
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/l1CaHzdym1U&t=4s/0.jpg)](https://www.youtube.com/watch?v=l1CaHzdym1U&t=4s "Click to Watch")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/l1CaHzdym1U/0.jpg)](https://youtu.be/l1CaHzdym1U "Click to Watch")
 
 # About Me
 
